@@ -33,18 +33,11 @@ Specifically:
 - Let us know if there are any other DNS entries (return-path/MX, custom tracking domain, etc.) we should add.
 - Confirm whether this is a self-service toggle in our Cloudbeds dashboard, or whether your team needs to enable it on the back end.
 
-### Account details
-
-- **Property name:** [Kyle to fill in — Cloudbeds property name]
-- **Account email / admin:** [Kyle to fill in]
-- **Domain to authenticate:** rentstayable.com
-- **Sending From addresses observed:** [list any specific addresses, e.g., reservations@rentstayable.com]
+I'll be attaching sample DMARC XML aggregate reports showing the current Cloudbeds rows failing alignment so your team can verify the issue directly.
 
 ### Urgency
 
 We'd like to complete this before flipping our DMARC policy to `p=reject` (target: within the next 7 days). Any guidance on how quickly we can get this provisioned and what we need to publish on our side would be greatly appreciated.
-
-Happy to provide our DMARC aggregate report XML showing the current Cloudbeds rows failing alignment if that helps your team verify.
 
 Thank you,
 
@@ -56,7 +49,6 @@ bke@rentstayable.com
 
 ## Notes for Kyle before sending
 
-- Fill in the bracketed account details (property name, account admin email, specific From addresses).
 - If Cloudbeds has a customer portal ticketing system, paste the body in there rather than emailing — they tend to route faster through their portal.
-- Attach one of the DMARC XML reports showing the Cloudbeds failure (e.g., `reports/email/mail_report_04-29-2026/google.com!rentstayable.com!1777334400!1777420799.zip`, record for IP `167.89.63.41`) — concrete evidence often shortcuts the support back-and-forth.
+- Attach one of the DMARC XML reports showing the Cloudbeds failure — the clearest sample is the Google aggregate covering Apr 28 (record for source IP `167.89.63.41`, header_from `rentstayable.com`, dkim/spf both fail). File: `reports/email/mail_report_04-29-2026/google.com!rentstayable.com!1777334400!1777420799.zip`.
 - If they say "this isn't supported on your plan," ask specifically about **SendGrid sender authentication** (Cloudbeds uses SendGrid under the hood; SendGrid supports custom-domain auth on every paid plan). That's usually the unlock.
