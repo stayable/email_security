@@ -275,12 +275,29 @@ No changes needed for investor portal.
    - **Alternatives:** Valimail (`https://www.valimail.com/try-monitor-free/`), dmarcian, EasyDMARC, PowerDMARC trial.
    - Once active: add the parser's `rua@` address as a second comma-separated `rua=` in both DMARC records (keep the original shared mailbox as backup).
 
-3. **Service audit — pending Rob's confirmation.**
-   Confirm whether each of these is still in active use. If dormant, remove DNS records and rotate/cancel credentials (forgotten-sender attack surface):
-   - **Amazon SES** (rentstayable.com) — HIGH risk if unused; SES creds get leaked frequently. Records: 3× long-name `_domainkey` CNAMEs + `amazonses.com` in SPF.
-   - **Mandrill / Mailchimp Transactional** (rentstayable.com) — Records: `mte1._domainkey`, `mte2._domainkey`, `mandrill_verify` TXT.
-   - **Sendinblue / Brevo** (rentstayable.com) — Records: `sendinblue-site-verification` TXT.
-   - **Adobe Sign** (rise8companies.com) — Remove `adobesign.com` from SPF if unused.
+3. **Service audit — confirmed status (from Apr 28-29 DMARC reports + Rob).**
+
+   Confirmed in active use (keep DNS records; verify alignment):
+   - **Amazon SES** (rentstayable.com) — ✅ ACTIVE. Confirmed by SES self-reporting DMARC aggregates and observed traffic.
+   - **Mandrill / Mailchimp Transactional** (rentstayable.com) — ✅ ACTIVE. ~52 msgs/day observed, DKIM aligns with `d=rentstayable.com`. Passes DMARC.
+   - **Cloudbeds (PMS)** (rentstayable.com) — ✅ ACTIVE. Confirmed by Kyle as the property management system. **CURRENTLY FAILING DMARC** — see "Cloudbeds DKIM custom-domain setup" below. Blocker for `p=reject`.
+   - **Adobe Sign** (rise8companies.com) — ✅ ACTIVE. Confirmed still in use; keep `adobesign.com` in SPF.
+   - **Resend / investor portal** (rise8companies.com) — ✅ ACTIVE. Already verified DKIM-aligned via `d=rise8companies.com`.
+
+   Pending decision:
+   - **Sendinblue / Brevo** (rentstayable.com) — ⏳ AWAITING Rob's confirmation. No traffic observed in current DMARC reports. Records: `sendinblue-site-verification` TXT. If dormant, remove the verification TXT and rotate/cancel credentials.
+
+4. **Cloudbeds DKIM custom-domain setup (BLOCKER for `p=reject`).**
+
+   Cloudbeds currently sends as `@rentstayable.com` but DKIM-signs with `d=cloudbeds.com` and SPF envelope is `em622.cloudbeds.com` (SendGrid). Neither aligns with `rentstayable.com` → DMARC fails → currently being **quarantined** by recipients. ~5 msgs/day observed across reporters.
+
+   Action: enable Cloudbeds' custom-domain / "Send via your domain" feature so outbound mail signs with `d=rentstayable.com`.
+
+   - Cloudbeds dashboard → Settings → Email / Notifications → Custom domain authentication (exact path varies by Cloudbeds product version; may require contacting Cloudbeds support if not user-facing).
+   - Cloudbeds will provide CNAME records (typically 3× SendGrid-style `s1._domainkey`, `s2._domainkey`, `em####`) to publish on `rentstayable.com` DNS at SiteGround.
+   - After publishing, verify with `https://mxtoolbox.com/dkim.aspx` (selector provided by Cloudbeds).
+   - Re-collect 2-3 days of DMARC reports; confirm Cloudbeds rows show `dkim=pass` aligned with `rentstayable.com`.
+   - Only then proceed to Day 7 `p=reject` flip.
 
 ### Day 7 — Flip to p=reject
 
@@ -292,9 +309,11 @@ v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s; pct=100; rua=mailto:mail-reports
 ```
 
 **Pre-flip checklist:**
-- ✅ Parser dashboard: every legitimate sender in "Aligned/Compliant" bucket (M365, Resend, etc.)
-- ✅ No help-desk complaints about missing email over 7 days
-- ✅ Service audit decisions made (any "no" services have records removed BEFORE flipping)
+- ☐ Parser dashboard: every legitimate sender in "Aligned/Compliant" bucket (M365, Resend, Mandrill, SES, Cloudbeds, Adobe Sign)
+- ☐ **Cloudbeds custom-domain DKIM live and aligned** (currently failing — blocks flip)
+- ☐ Sendinblue/Brevo confirmed (kept or records removed)
+- ☐ No help-desk complaints about missing email over 7 days
+- ☐ Service audit decisions made (any "no" services have records removed BEFORE flipping)
 
 **Post-flip monitoring (48 hours):**
 - Watch parser dashboard daily for "Rejected" entries
